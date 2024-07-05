@@ -6,8 +6,8 @@ const multer = require('multer');
 const path = require('path');
 const whisper = require('whisper-node');
 
-const privateKey = fs.readFileSync('key.pem', 'utf8');
-const certificate = fs.readFileSync('cert.pem', 'utf8');
+const privateKey = fs.readFileSync('./sslcert/key.pem', 'utf8');
+const certificate = fs.readFileSync('./sslcert/cert.pem', 'utf8');
 const credentials = { key: privateKey, cert: certificate };
 
 const app = express();
@@ -41,15 +41,18 @@ const transcribe = async (audioPath) => {
             word_timestamps: true
         }
     });
-    
+    return transcript;
 }
 
-app.get('', (req, res) => {
-
+app.get('/files', (req, res) => {
+    return res.status(200).json({});
 });
 
-app.post('', upload.single('file'), (req, res) => {
-
+app.post('/audio', upload.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ reason: "No file attached!" });
+    }
+    return res.status(200).json({ status: "success" });
 });
 
 io.on('connection', (socket) => {
