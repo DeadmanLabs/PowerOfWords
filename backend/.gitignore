@@ -1,1 +1,2 @@
 backend/node_modules/whisper-node/lib/whisper.cpp/models/ggml-medium.bin
+backend/whisper.cpp/models/*.bin

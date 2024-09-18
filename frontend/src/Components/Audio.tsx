@@ -6,15 +6,41 @@ function Audio() {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [audioDuration, setAudioDuration] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recordingTimerRef = useRef<number | null>(null);
 
   const handleAudioUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Stop any ongoing recording
+    if (isRecording) {
+      stopRecording();
+    }
+
     const file = event.target.files?.[0] || null;
+    if (file) {
+      console.log('Selected file:', file);
+      const audio = new window.Audio(URL.createObjectURL(file)); // Use window.Audio
+      audio.onloadedmetadata = () => {
+        console.log('Audio metadata loaded');
+        console.log('Audio duration:', audio.duration);
+        setAudioDuration(audio.duration);
+      };
+      audio.onerror = (e) => {
+        console.error('Error loading audio file:', e);
+      };
+      audio.load(); // Ensure the audio file is loaded
+    }
     setAudioFile(file);
+    setRecordingTime(0); // Reset recording time when a new file is selected
   };
 
   const startRecording = () => {
+    // Reset audio file, duration, recording time, and audio chunks when starting a new recording
+    setAudioFile(null);
+    setAudioDuration(null);
+    setRecordingTime(0);
+    setAudioChunks([]);
+
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => {
         const recorder = new MediaRecorder(stream);
@@ -29,7 +55,7 @@ function Audio() {
           const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
           const audioFile = new File([audioBlob], 'recording.wav', { type: 'audio/wav' });
           setAudioFile(audioFile);
-          setAudioChunks([]);
+          setAudioDuration(recordingTime); // Directly set the duration from recordingTime
         };
 
         setIsRecording(true);
@@ -62,12 +88,13 @@ function Audio() {
       };
       formData.append('metadata', JSON.stringify(metadata));
       try {
-        const response = await fetch('https://localhost/audio', {
+        const response = await fetch('http://localhost:5000/audio', {
             method: 'POST',
             body: formData
         });
         if (response.ok) {
-            console.log('File uploaded successfully');
+            const data = await response.json();
+            console.log('File uploaded successfully', data);
         } else {
             console.error('File upload failed');
         }
@@ -121,7 +148,7 @@ function Audio() {
       {audioFile && (
         <div className="mt-4 text-sm text-gray-700 w-full">
           <p>Audio file: {audioFile.name}</p>
-          <p>Audio duration: {Math.floor(recordingTime / 60)}m {recordingTime % 60}s</p>
+          <p>Audio duration: {audioDuration !== null ? `${Math.floor(audioDuration / 60)}m ${Math.floor(audioDuration % 60)}s` : 'Loading...'}</p>
         </div>
       )}
     </div>

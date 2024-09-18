@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 import Audio from './Audio.tsx';
 import Transcribe from './Transcribe.tsx';
+import Summarize from './Summarize.tsx';
 
 function Tabs() {
     const [selectedTab, setSelectedTab] = useState('Audio');
@@ -13,7 +14,7 @@ function Tabs() {
             case 'Transcribe':
                 return <Transcribe />
             case 'Summarize':
-                return <></>
+                return <Summarize />
             default:
                 return null;
         }
